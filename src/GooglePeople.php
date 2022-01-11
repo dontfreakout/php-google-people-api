@@ -101,6 +101,29 @@ class GooglePeople
         return $this->getByResourceName('people/me');
     }
 
+    public function search($query)
+    {
+        $base_url = self::PEOPLE_BASE_URL.'people:searchContacts?readMask=' . implode(',', self::PERSON_FIELDS) . '&query=';
+
+        // Warmup the cache (see: https://developers.google.com/people/v1/contacts?authuser=2#search_the_users_contacts)
+        $this->googleOAuth2Handler->performRequest('GET', $base_url);
+
+        // Perform the search
+        $response = $this->googleOAuth2Handler->performRequest('GET', $base_url . urlencode($query));
+
+        $body = (string) $response->getBody();
+
+        if ($response->getStatusCode()!=200) {
+            throw new Exception($body);
+        }
+
+        $contacts = json_decode($body);
+
+        return array_map(function($object) {
+            return $this->convertResponseConnectionToContact($object->person);
+        }, isset($contacts->results) ? $contacts->results : []);
+    }
+
     public function save(Contact $contact)
     {
         $requestObj = new \stdClass();
