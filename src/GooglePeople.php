@@ -65,7 +65,7 @@ class GooglePeople
 
         $responseObj = json_decode($body);
 
-        if(! is_array($responseObj->connections)) {
+        if(! isset($responseObj->connections) && ! is_array($responseObj->connections)) {
             return [];
         }
 
